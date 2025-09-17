@@ -1,0 +1,4 @@
+env: dev
+storage_path: storage/storage.db
+HTTP_SERVER:
+  address: ":8082"
