@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,17 +13,27 @@ import (
 
 	"github.com/codebymahmud24/student-api/internal/config"
 	"github.com/codebymahmud24/student-api/internal/http/handler/student"
+	"github.com/codebymahmud24/student-api/internal/storage/sqlite"
 )
 
 func main() {
 	// load config
 	cfg := config.MustLoad()
-
 	// Database Setup
+	storage, err := sqlite.InitialiazeDB(*cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	slog.Info("storage initialized", slog.String("env", cfg.ENV), slog.String("version", "1.0.0"))
 
 	// Setup Router
 	router := http.NewServeMux()
-	router.HandleFunc("POST /api/v1/students", student.New())
+
+	router.HandleFunc("POST /api/v1/students", student.CreateStudentHandler(storage))
+	router.HandleFunc("GET /api/v1/students/{id}", student.GetStudentById(storage))
+	router.HandleFunc("GET /api/v1/students", student.GetAllStudents(storage))
+	router.HandleFunc("PUT /api/v1/students/{id}", student.UpdateStudentById(storage))
 
 	// Start Server
 	server := &http.Server{
